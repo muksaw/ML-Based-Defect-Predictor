@@ -1,0 +1,9 @@
+{
+    "url_to_repo": "https://github.com/user/repo.git",
+    "clone_repo_to": "/tmp/repo_clone",
+    "branch": "main",
+    "from_date": "2023-01-01",
+    "to_date": "2023-12-31",
+    "confidence_threshold": 0.7,
+    "model_path": "ml_defect_model.joblib"
+}

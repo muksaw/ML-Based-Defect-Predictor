@@ -1,0 +1,9 @@
+nltk>=3.5,<3.8
+pandas>=1.1.4,<2.0.0
+pydriller>=2.0,<3.0
+pyyaml>=6.0,<7.0
+spacy>=3.0.0,<4.0
+scikit-learn>=1.0.0,<2.0.0
+numpy>=1.19.0,<2.0.0
+joblib>=1.0.0,<2.0.0
+repository-miner>=0.1.0
