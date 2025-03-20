@@ -7,8 +7,8 @@
    - Implemented a Random Forest classifier instead of the simple time-decay risk function in the original code
    - Uses historical bug patterns to make predictions rather than just recency of changes
 
-2. **Rich Feature Engineering**:
-   - Extract 8 distinct metrics from repository history (commits, authors, code complexity, etc.)
+2. **Feature Engineering**:
+   - Goal is to extract 8 distinct metrics from repository history (commits, authors, code complexity, etc.)
    - Standardize features for better model performance
    - Handle timezone-aware datetime comparison
 
@@ -23,7 +23,7 @@
    - Feature importance analysis
    - Top-N accuracy metrics (Top-5, Top-10)
 
-## How Our Code Works
+## How the code works
 
 1. **Feature Extraction**:
    ```python
@@ -52,7 +52,6 @@
 
 4. **Key Innovations**:
    - Bug detection using keywords in commit messages
-   - Handling one-class learning scenarios
    - Timezone-aware comparisons for cross-repository compatibility
 
 ## Plans for Next Sprint
@@ -62,17 +61,12 @@
    - Implement synthetic bug pattern generation
 
 2. **Model Improvements**:
-   - Add model options beyond Random Forest (Gradient Boosting, SVM)
    - Implement class weighting for imbalanced data
 
 3. **Feature Expansion**:
    - Integrate static code analysis metrics
-   - Add developer experience features
-   - Implement code churn metrics
 
 4. **Usability**:
-   - Add visualization of prediction results
+   - (Eventually) Add visualization of prediction results
    - Implement incremental training capability
-   - Create an API for integration with CI/CD systems
 
-Our implementation provides a foundation for data-driven defect prediction that can learn and improve with more repository data, contrasting with the simpler heuristic-based approach in the original code.
