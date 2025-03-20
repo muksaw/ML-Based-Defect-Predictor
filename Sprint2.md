@@ -31,28 +31,28 @@ A class for extracting code‑change metrics from a Git repo, training a defect�
 
 ## Methods
 
-### `__init__(config)`
+### __init__(config)
 Initialize with repository URL, local clone path, branch, and optional date filters.
 
-### `extract_features(historical_data=True)`
+### extract_features(historical_data=True)
 Collect file‑level metrics from the repo’s commit history; optionally label files as “buggy” for training.
 
-### `prepare_data(df, for_training=True)`
+### prepare_data(df, for_training=True)
 Select, clean, and scale features; split into train/test sets if training, otherwise prepare data for prediction.
 
-### `train_model(X_train, y_train)`
+### train_model(X_train, y_train)
 Fit a Random Forest classifier on the provided training data.
 
-### `train()`
+### train()
 Run the full pipeline extract features, prepare data, train the model, evaluate performance and return evaluation metrics.
 
-### `predict()`
+### predict()
 Extract current repository features and use the trained model to predict & rank potentially buggy files.
 
-### `save_model(path="ml_defect_model.joblib")`
+### save_model(path="ml_defect_model.joblib")
 Serialize the trained model and scaler to disk for later reuse.
 
-### `load_model(path="ml_defect_model.joblib")`
+### load_model(path="ml_defect_model.joblib")
 Load a previously saved model and scaler into memory for inference.
 
 ## Plans for Next Sprint
