@@ -44,7 +44,7 @@ Select, clean, and scale features; split into train/test sets if training, other
 Fit a Random Forest classifier on the provided training data.
 
 ### `train()`
-Run the full pipeline — extract features, prepare data, train the model, evaluate performance — and return evaluation metrics.
+Run the full pipeline extract features, prepare data, train the model, evaluate performance and return evaluation metrics.
 
 ### `predict()`
 Extract current repository features and use the trained model to predict & rank potentially buggy files.
