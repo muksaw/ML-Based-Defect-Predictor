@@ -39,7 +39,7 @@
    - Processing large repositories remains resource-intensive despite parallel processing
    - Current approach limited to analyzing repositories within specific time spans
 
-## Plans for Next Sprint
+## Plans for Next Sprint(s)
 
 1. **Multi-Repository Analysis**:
    - Extend the model to analyze multiple repositories simultaneously
