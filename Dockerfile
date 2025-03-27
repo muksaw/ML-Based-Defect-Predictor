@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY *.py ./
 COPY config.json ./
-COPY ground_truth.csv ./
 
 # Download the SpaCy language model
 RUN python -m spacy download en_core_web_sm
@@ -27,8 +26,14 @@ RUN python -m spacy download en_core_web_sm
 # Create the Testing directory as a concrete path
 RUN mkdir -p /app/Testing
 
+# Create a directory for output files
+RUN mkdir -p /app/outputs
+
 # Copy the entire project directory into the container
 COPY . .
 
 # Uncomment the command below to execute your script automatically
-CMD ["python", "ml_harness.py", "--train", "--predict"]
+CMD ["python", "ml_harness.py", "--train", "--predict", "--output-file", "/app/outputs/output.txt"]
+
+# To access output files, run the container with a volume mount:
+# docker run --rm -it -v $(pwd)/outputs:/app/outputs defect-predictor

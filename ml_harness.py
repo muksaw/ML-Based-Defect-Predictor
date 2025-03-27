@@ -3,16 +3,75 @@ import os
 import json
 import pandas as pd
 import argparse
+import sys
 from ml_defect_predictor import MLDefectPredictor
 import logging
+from datetime import datetime
+from contextlib import contextmanager
 
+# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+@contextmanager
+def redirect_stdout(output_file=None):
+    """
+    Context manager to redirect stdout to a file while still displaying on console.
+    
+    Args:
+        output_file (str): Path to output file
+    """
+    original_stdout = sys.stdout
+    
+    if output_file:
+        file_stdout = open(output_file, 'w')
+        
+        class DualOutput:
+            def write(self, message):
+                file_stdout.write(message)
+                original_stdout.write(message)
+                
+            def flush(self):
+                file_stdout.flush()
+                original_stdout.flush()
+        
+        sys.stdout = DualOutput()
+    
+    try:
+        yield
+    finally:
+        if output_file:
+            sys.stdout = original_stdout
+            file_stdout.close()
+            logger.info(f"Full output saved to {output_file}")
 
 def load_config(config_file):
     """Load configuration from a JSON file."""
     with open(config_file, 'r') as f:
         return json.load(f)
+
+def truncate_list(items, max_display=10):
+    """
+    Truncate a list for display purposes.
+    
+    Args:
+        items (list): List to truncate
+        max_display (int): Maximum number of items to display
+        
+    Returns:
+        str: Truncated list as string
+    """
+    if len(items) <= max_display:
+        return "\n".join(f"  - {item}" for item in items)
+    
+    first_half = items[:max_display//2]
+    last_half = items[-(max_display//2):]
+    
+    truncated = "\n".join(f"  - {item}" for item in first_half)
+    truncated += f"\n  ... {len(items) - max_display} more files (see output.txt for complete list) ...\n"
+    truncated += "\n".join(f"  - {item}" for item in last_half)
+    
+    return truncated
 
 def compare_with_ground_truth(predicted_files, ground_truth_file):
     """
@@ -68,16 +127,14 @@ def compare_with_ground_truth(predicted_files, ground_truth_file):
         print(f"Top 5 Precision: {top_5_precision:.2f}")
         print(f"Top 10 Precision: {top_10_precision:.2f}")
         
-        # Print mismatched files
+        # Print mismatched files with truncation
         if len(false_positives) > 0:
             print(f"\nFalse Positives (Files predicted as buggy but not in ground truth):")
-            for fp in false_positives:
-                print(f"  - {fp}")
+            print(truncate_list(list(false_positives), 20))
         
         if len(false_negatives) > 0:
             print(f"\nFalse Negatives (Files in ground truth but not predicted):")
-            for fn in false_negatives:
-                print(f"  - {fn}")
+            print(truncate_list(list(false_negatives), 20))
         
         return {
             "precision": precision,
@@ -123,67 +180,98 @@ def main():
     parser.add_argument('--load-model', action='store_true', help='Load a pre-trained model')
     parser.add_argument('--model-path', default='ml_defect_model.joblib', help='Path to model file')
     parser.add_argument('--ground-truth', default='ground_truth.csv', help='Path to ground truth file')
+    parser.add_argument('--max-commits', type=int, help='Maximum number of commits to analyze')
+    parser.add_argument('--output-file', default='output.txt', help='File to save detailed output')
     
     args = parser.parse_args()
+    
+    # Create output filename with timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = f"{os.path.splitext(args.output_file)[0]}_{timestamp}.txt"
     
     # Load configuration
     config = load_config(args.config)
     logger.info(f"Loaded configuration from {args.config}")
     
+    # Override max_commits if provided via command line
+    if args.max_commits:
+        config['max_commits'] = args.max_commits
+    
     # Initialize predictor
     predictor = MLDefectPredictor(config)
     
-    # Load model if requested
-    if args.load_model:
-        if predictor.load_model(args.model_path):
-            logger.info(f"Loaded model from {args.model_path}")
-        else:
-            logger.error(f"Failed to load model from {args.model_path}")
-            return
-    
-    # Train model if requested
-    if args.train:
-        logger.info("Training model...")
-        metrics = predictor.train()
+    # Redirect output to both console and file
+    with redirect_stdout(output_file):
+        print(f"ML-Based Defect Predictor - Analysis started at {timestamp}")
+        print(f"\n=== Configuration ===")
+        print(f"Repository: {config['url_to_repo']}")
+        print(f"Branch: {config['branch']}")
+        print(f"Date range: {config.get('from_date', 'N/A')} to {config.get('to_date', 'N/A')}")
+        print(f"Max commits: {config.get('max_commits', 'All')}")
+        print(f"File extensions: {', '.join(config.get('file_extensions', ['.py']))}")
         
-        if "error" in metrics:
-            logger.error(f"Training failed: {metrics['error']}")
-            return
-        
-        print("\n=== Training Metrics ===")
-        print(f"Precision: {metrics['precision']:.4f}")
-        print(f"Recall: {metrics['recall']:.4f}")
-        print(f"F1 Score: {metrics['f1_score']:.4f}")
-        print(f"Buggy files in test set: {metrics['buggy_files_count']} out of {metrics['total_files_count']}")
-        
-        print("\n=== Feature Importances ===")
-        for feature, importance in sorted(metrics['feature_importances'].items(), key=lambda x: x[1], reverse=True):
-            print(f"{feature}: {importance:.4f}")
-        
-        # Save model if requested
-        if args.save_model:
-            if predictor.save_model(args.model_path):
-                logger.info(f"Model saved to {args.model_path}")
+        # Load model if requested
+        if args.load_model:
+            if predictor.load_model(args.model_path):
+                logger.info(f"Loaded model from {args.model_path}")
+                print(f"\nLoaded pre-trained model from {args.model_path}")
             else:
-                logger.error("Failed to save model")
-    
-    # Generate predictions if requested
-    if args.predict:
-        logger.info("Generating predictions...")
-        predictions = predictor.predict()
+                logger.error(f"Failed to load model from {args.model_path}")
+                print(f"\nError: Failed to load model from {args.model_path}")
+                return
         
-        if not predictions:
-            logger.error("No predictions generated")
-            return
+        # Train model if requested
+        if args.train:
+            logger.info("Training model...")
+            print("\n=== Starting Model Training ===")
+            max_commits = config.get('max_commits', 5000)
+            metrics = predictor.train()
+            
+            if "error" in metrics:
+                logger.error(f"Training failed: {metrics['error']}")
+                print(f"\nTraining failed: {metrics['error']}")
+                return
+            
+            print("\n=== Training Metrics ===")
+            print(f"Precision: {metrics['precision']:.4f}")
+            print(f"Recall: {metrics['recall']:.4f}")
+            print(f"F1 Score: {metrics['f1_score']:.4f}")
+            print(f"Buggy files in test set: {metrics['buggy_files_count']} out of {metrics['total_files_count']}")
+            
+            print("\n=== Feature Importances ===")
+            for feature, importance in sorted(metrics['feature_importances'].items(), key=lambda x: x[1], reverse=True):
+                print(f"{feature}: {importance:.4f}")
+            
+            # Save model if requested
+            if args.save_model:
+                if predictor.save_model(args.model_path):
+                    logger.info(f"Model saved to {args.model_path}")
+                    print(f"\nModel saved to {args.model_path}")
+                else:
+                    logger.error("Failed to save model")
+                    print("\nError: Failed to save model")
         
-        # Print top predictions
-        print_predictions(predictions)
-        
-        # Compare with ground truth if file exists
-        if os.path.exists(args.ground_truth):
-            compare_with_ground_truth(predictions, args.ground_truth)
-        else:
-            logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
+        # Generate predictions if requested
+        if args.predict:
+            logger.info("Generating predictions...")
+            print("\n=== Generating Predictions ===")
+            max_commits = config.get('max_commits', 5000)
+            predictions = predictor.predict()
+            
+            if not predictions:
+                logger.error("No predictions generated")
+                print("\nError: No predictions generated")
+                return
+            
+            # Print top predictions
+            print_predictions(predictions)
+            
+            # Compare with ground truth if file exists
+            if os.path.exists(args.ground_truth):
+                compare_with_ground_truth(predictions, args.ground_truth)
+            else:
+                logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
+                print(f"\nNote: Ground truth file {args.ground_truth} not found. Skipping comparison.")
 
 if __name__ == "__main__":
     main() 
