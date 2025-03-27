@@ -107,8 +107,6 @@ Total Files Predicted as Buggy: 2048
 Precision: 0.01
 Recall: 0.84
 F1 Score: 0.02
-Top 5 Precision: 0.00
-Top 10 Precision: 0.00
 
 False Positives (Files predicted as buggy but not in ground truth):
   - llama-index-integrations/tools/llama-index-tools-shopify/README.md
