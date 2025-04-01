@@ -41,10 +41,25 @@ class MLDefectPredictor:
         
         # Ensure the clone directory exists
         os.makedirs(self.clone_repo_to, exist_ok=True)
+
+        # Test files exclusion patterns
+#       self.test_keywords = ['test', 'tests', '_test', 'test_']
         
         # ML model
         self.model = None
         self.scaler = StandardScaler()
+
+#    def is_test_file(self, file_path):
+#        """
+#        Check if a file is likely a test file based on its name or path.
+#        
+#        Args:
+#            file_path (str): Path to the file
+#        
+#        Returns:
+#            bool: True if the file is identified as a test file, otherwise False
+#        """
+#        return any(keyword in file_path.lower() for keyword in self.test_keywords)
         
     def extract_features(self, historical_data=True, max_commits=5000):
         """
@@ -100,6 +115,10 @@ class MLDefectPredictor:
                     file_path = file.new_path or file.old_path
                     if file_path is None:
                         continue
+
+                     # Skip test files
+#                    if self.is_test_file(file_path):
+#                        continue
                     
                     # Initialize file data if it doesn't exist
                     if file_path not in file_metrics:

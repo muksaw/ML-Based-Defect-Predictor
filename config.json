@@ -1,9 +1,9 @@
 {
-    "url_to_repo": "https://github.com/run-llama/llama_index.git",
+    "url_to_repo": "https://github.com/manideepika21/Deep-Live-Cam.git",
     "clone_repo_to": "/tmp/repo_clone",
     "branch": "main",
-    "from_date": "2023-01-01",
-    "to_date": "2024-03-31",
+    "from_date": "2023-09-24",
+    "to_date": "2025-03-22",
     "confidence_threshold": 0.7,
     "model_path": "ml_defect_model.joblib",
     "file_extensions": [".py", ".ipynb", ".md", ".js", ".ts"],
