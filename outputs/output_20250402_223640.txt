@@ -1,0 +1,62 @@
+ML-Based Defect Predictor - Analysis started at 20250402_223640
+
+=== Configuration ===
+Repository: https://github.com/manideepika21/Deep-Live-Cam.git
+Branch: main
+Date range: 2023-09-24 to 2025-03-22
+Max commits: 5000
+File extensions: .py, .ipynb, .md, .js, .ts
+
+=== Starting Model Training ===
+
+=== Training Metrics ===
+Precision: 0.5000
+Recall: 1.0000
+F1 Score: 0.6667
+Buggy files in test set: 1 out of 6
+
+=== Feature Importances ===
+n_authors: 0.3092
+bug_fix_count: 0.2175
+n_commits: 0.1796
+n_lines_added: 0.0974
+n_lines_deleted: 0.0655
+recent_modified_days: 0.0619
+avg_complexity: 0.0379
+age_days: 0.0311
+
+=== Generating Predictions ===
+
+=== Top 10 Most Likely Buggy Files ===
+1. modules/processors/frame/face_swapper.py - Confidence: 0.9793
+2. modules/ui.py - Confidence: 0.9793
+3. modules/processors/frame/face_enhancer.py - Confidence: 0.9777
+4. modules/core.py - Confidence: 0.9760
+5. modules/globals.py - Confidence: 0.9615
+6. modules/face_analyser.py - Confidence: 0.9303
+7. modules/capturer.py - Confidence: 0.9032
+8. modules/predicter.py - Confidence: 0.8777
+9. modules/processors/frame/core.py - Confidence: 0.7106
+
+Total files analyzed: 9
+Files predicted as buggy: 9
+Files predicted as clean: 0
+
+=== Comparison with Ground Truth ===
+Total Files in Ground Truth: 3
+Total Files Predicted as Buggy: 9
+
+=== Model Performance ===
+Precision: 0.33
+Recall: 1.00
+F1 Score: 0.50
+Top 5 Precision: 0.60
+Top 10 Precision: 0.33
+
+False Positives (Files predicted as buggy but not in ground truth):
+  - modules/processors/frame/core.py
+  - modules/predicter.py
+  - modules/processors/frame/face_enhancer.py
+  - modules/face_analyser.py
+  - modules/capturer.py
+  - modules/globals.py

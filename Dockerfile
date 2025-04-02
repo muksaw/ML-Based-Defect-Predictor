@@ -26,14 +26,12 @@ RUN python -m spacy download en_core_web_sm
 # Create the Testing directory as a concrete path
 RUN mkdir -p /app/Testing
 
-# Create a directory for output files
-RUN mkdir -p /app/outputs
-
 # Copy the entire project directory into the container
 COPY . .
 
 # Uncomment the command below to execute your script automatically
-CMD ["python", "ml_harness.py", "--train", "--predict", "--output-file", "/app/outputs/output.txt"]
+CMD ["python", "ml_harness.py", "--train", "--predict"]
 
-# To access output files, run the container with a volume mount:
+# Note: Output files will be saved to the ./outputs directory in the repository
+# When running the container, mount the outputs directory to persist the results:
 # docker run --rm -it -v $(pwd)/outputs:/app/outputs defect-predictor

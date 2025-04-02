@@ -7,5 +7,6 @@
     "confidence_threshold": 0.7,
     "model_path": "ml_defect_model.joblib",
     "file_extensions": [".py", ".ipynb", ".md", ".js", ".ts"],
-    "max_commits": 5000
+    "max_commits": 5000,
+    "time_decay_factor": 30
 }

@@ -13,6 +13,10 @@ from contextlib import contextmanager
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Create outputs directory if it doesn't exist
+OUTPUTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs')
+os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
 @contextmanager
 def redirect_stdout(output_file=None):
     """
@@ -24,6 +28,8 @@ def redirect_stdout(output_file=None):
     original_stdout = sys.stdout
     
     if output_file:
+        # Ensure the output directory exists
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         file_stdout = open(output_file, 'w')
         
         class DualOutput:
@@ -162,13 +168,68 @@ def print_predictions(predictions):
     print("\n=== Top 10 Most Likely Buggy Files ===")
     
     for i, prediction in enumerate(predictions[:10]):
-        print(f"{i+1}. {prediction['file_path']} - Confidence: {prediction['confidence']:.4f}")
+        # Add relative risk to the output with category
+        risk_info = f" - Risk: {prediction.get('relative_risk', 0):.2f} ({prediction.get('risk_category', 'Unknown')})" if 'relative_risk' in prediction else ""
+        print(f"{i+1}. {prediction['file_path']} - Confidence: {prediction['confidence']:.4f}{risk_info}")
     
     # Print summary counts
     buggy_count = sum(1 for p in predictions if p['is_buggy'])
     print(f"\nTotal files analyzed: {len(predictions)}")
     print(f"Files predicted as buggy: {buggy_count}")
     print(f"Files predicted as clean: {len(predictions) - buggy_count}")
+    
+    # Add a risk breakdown if we have predictions
+    if len(predictions) > 0 and 'risk_category' in predictions[0]:
+        risk_counts = {}
+        for p in predictions:
+            category = p.get('risk_category', 'Unknown')
+            risk_counts[category] = risk_counts.get(category, 0) + 1
+        
+        print("\n=== Risk Category Breakdown ===")
+        for category, count in sorted(risk_counts.items(), key=lambda x: ['Low', 'Medium-Low', 'Medium', 'Medium-High', 'High', 'Unknown'].index(x[0])):
+            print(f"{category} Risk: {count} files ({count/len(predictions)*100:.1f}%)")
+    
+    # Get time span and threshold information
+    time_span = None
+    adjusted_threshold = None
+    original_threshold = None
+    
+    if len(predictions) > 0:
+        if '_time_span' in predictions[0]:
+            time_span = predictions[0].get('_time_span', 0)
+        if '_adjusted_threshold' in predictions[0]:
+            adjusted_threshold = predictions[0].get('_adjusted_threshold', 0.7)
+        if '_original_threshold' in predictions[0]:
+            original_threshold = predictions[0].get('_original_threshold', 0.7)
+    
+    # Explain metrics and thresholds
+    print("\n=== Understanding the Metrics ===")
+    
+    # Explain confidence scores
+    print("\n* Confidence Score (0-1):")
+    print("  This is the machine learning model's prediction confidence that a file contains bugs.")
+    print("  - 0.5-0.7: Low confidence - the file might contain bugs")
+    print("  - 0.7-0.85: Medium confidence - the file likely contains bugs")
+    print("  - 0.85-1.0: High confidence - the file very likely contains bugs")
+    
+    # Explain the threshold adjustment if applicable
+    if time_span and adjusted_threshold and original_threshold:
+        print(f"\n* Confidence Threshold Adjustment:")
+        print(f"  Base threshold: {original_threshold:.2f}")
+        print(f"  Adjusted threshold: {adjusted_threshold:.2f}")
+        print(f"  This adjustment accounts for the {time_span} day analysis period.")
+        print("  - Longer time periods use higher thresholds to reduce false positives")
+        print("  - Only files with confidence above this threshold are shown")
+    
+    # Explain relative risk score
+    print("\n* Relative Risk Score:")
+    print("  This normalized metric compares each file's risk against repository averages.")
+    print("  Relative Risk considers bug history, commit patterns, and code complexity.")
+    print("  - <0.5: Low Risk - significantly safer than repository average")
+    print("  - 0.5-1.0: Medium-Low Risk - somewhat safer than repository average")
+    print("  - 1.0-1.5: Medium Risk - around repository average")
+    print("  - 1.5-3.0: Medium-High Risk - higher risk than repository average")
+    print("  - >3.0: High Risk - significantly higher risk than repository average")
 
 def main():
     """Main function to run the ML defect predictor."""
@@ -181,13 +242,19 @@ def main():
     parser.add_argument('--model-path', default='ml_defect_model.joblib', help='Path to model file')
     parser.add_argument('--ground-truth', default='ground_truth.csv', help='Path to ground truth file')
     parser.add_argument('--max-commits', type=int, help='Maximum number of commits to analyze')
-    parser.add_argument('--output-file', default='output.txt', help='File to save detailed output')
+    parser.add_argument('--output-file', help='File to save detailed output')
+    # Add time decay factor parameter
+    parser.add_argument('--time-decay', type=float, help='Time decay factor for commit weighting (in days)')
     
     args = parser.parse_args()
     
     # Create output filename with timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = f"{os.path.splitext(args.output_file)[0]}_{timestamp}.txt"
+    if args.output_file:
+        output_base = os.path.splitext(args.output_file)[0]
+    else:
+        output_base = 'output'
+    output_file = os.path.join(OUTPUTS_DIR, f"{output_base}_{timestamp}.txt")
     
     # Load configuration
     config = load_config(args.config)
@@ -196,6 +263,10 @@ def main():
     # Override max_commits if provided via command line
     if args.max_commits:
         config['max_commits'] = args.max_commits
+    
+    # Override time decay factor if provided
+    if args.time_decay:
+        config['time_decay_factor'] = args.time_decay
     
     # Initialize predictor
     predictor = MLDefectPredictor(config)
@@ -209,6 +280,8 @@ def main():
         print(f"Date range: {config.get('from_date', 'N/A')} to {config.get('to_date', 'N/A')}")
         print(f"Max commits: {config.get('max_commits', 'All')}")
         print(f"File extensions: {', '.join(config.get('file_extensions', ['.py']))}")
+        print(f"Base confidence threshold: {config.get('confidence_threshold', 0.7):.2f}")
+        print(f"Time decay factor: {config.get('time_decay_factor', 30)} days")
         
         # Load model if requested
         if args.load_model:
@@ -224,6 +297,7 @@ def main():
         if args.train:
             logger.info("Training model...")
             print("\n=== Starting Model Training ===")
+            print("Training using enhanced metrics including time-weighted analysis and relative risk scoring...")
             max_commits = config.get('max_commits', 5000)
             metrics = predictor.train()
             
@@ -255,6 +329,7 @@ def main():
         if args.predict:
             logger.info("Generating predictions...")
             print("\n=== Generating Predictions ===")
+            print("Using enhanced defect prediction with adaptive confidence threshold and time-weighted analysis...")
             max_commits = config.get('max_commits', 5000)
             predictions = predictor.predict()
             

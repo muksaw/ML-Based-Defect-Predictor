@@ -37,30 +37,179 @@ class MLDefectPredictor:
         self.from_date = datetime.strptime(config["from_date"], "%Y-%m-%d") if "from_date" in config else None
         self.to_date = datetime.strptime(config["to_date"], "%Y-%m-%d") if "to_date" in config else None
         self.confidence_threshold = config.get("confidence_threshold", 0.7)
-        self.file_extensions = config.get("file_extensions", ['.py', '.java', '.js', '.cpp', '.c', '.h', '.cs'])
+        
+        # Time weighting parameters
+        self.time_decay_factor = config.get("time_decay_factor", 30.0)  # Default: 30 days half-life
+        
+        # Separate file extensions into code and documentation
+        self.code_extensions = ['.py', '.java', '.js', '.cpp', '.c', '.h', '.cs', '.ts']
+        self.doc_extensions = ['.md', '.rst', '.txt']
+        self.file_extensions = config.get("file_extensions", self.code_extensions)
         
         # Ensure the clone directory exists
         os.makedirs(self.clone_repo_to, exist_ok=True)
-
+        
         # Test files exclusion patterns
 #       self.test_keywords = ['test', 'tests', '_test', 'test_']
         
         # ML model
         self.model = None
         self.scaler = StandardScaler()
-
-#    def is_test_file(self, file_path):
-#        """
-#        Check if a file is likely a test file based on its name or path.
-#        
-#        Args:
-#            file_path (str): Path to the file
-#        
-#        Returns:
-#            bool: True if the file is identified as a test file, otherwise False
-#        """
-#        return any(keyword in file_path.lower() for keyword in self.test_keywords)
         
+        # Cache for extracted features
+        self._feature_cache = None
+        self._bug_fixes_cache = None
+
+    def is_code_file(self, file_path):
+        """
+        Check if a file is a code file that should be analyzed for bugs.
+        
+        Args:
+            file_path (str): Path to the file
+        
+        Returns:
+            bool: True if the file should be analyzed for bugs
+        """
+        ext = os.path.splitext(file_path)[1].lower()
+        return ext in self.code_extensions
+        
+    def is_test_file(self, file_path):
+        """
+        Check if a file is a test file that should be excluded from analysis.
+        
+        Args:
+            file_path (str): Path to the file
+            
+        Returns:
+            bool: True if the file is a test file
+        """
+        # Check if file path contains test indicators
+        test_indicators = ['test', 'tests', '_test', 'test_', '/test/', '/tests/']
+        file_path_lower = file_path.lower()
+        
+        # Check if it's in a test directory or has test in the name
+        for indicator in test_indicators:
+            if indicator in file_path_lower:
+                return True
+                
+        return False
+        
+    def calculate_time_weight(self, commit_date, current_date):
+        """
+        Calculate a time weight for a commit based on its age.
+        More recent commits get higher weight.
+        
+        Args:
+            commit_date: Date of the commit
+            current_date: Current date (reference point)
+            
+        Returns:
+            float: Weight between 0 and 1 (higher for more recent commits)
+        """
+        # Make dates timezone-naive for comparison
+        commit_date = commit_date.replace(tzinfo=None) if commit_date.tzinfo else commit_date
+        current_date = current_date.replace(tzinfo=None) if hasattr(current_date, 'tzinfo') and current_date.tzinfo else current_date
+        
+        # Calculate days since commit
+        days_since_commit = (current_date - commit_date).days
+        
+        # Apply exponential decay with half-life of time_decay_factor days
+        weight = math.exp(-days_since_commit / self.time_decay_factor)
+        
+        return weight
+
+    def calculate_relative_risk(self, file_metrics):
+        """
+        Calculate relative risk scores for files based on repository averages.
+        
+        Args:
+            file_metrics (dict): Dictionary of file metrics
+            
+        Returns:
+            dict: Updated file metrics with relative risk scores
+        """
+        if not file_metrics:
+            return file_metrics
+            
+        # Get repository averages
+        commit_counts = [m['n_commits'] for m in file_metrics.values()]
+        bug_fix_counts = [m['bug_fix_count'] for m in file_metrics.values()]
+        complexity_values = [m['total_complexity'] / max(1, m['n_functions']) for m in file_metrics.values()]
+        
+        avg_commits = np.mean(commit_counts) if commit_counts else 0
+        avg_bug_fixes = np.mean(bug_fix_counts) if bug_fix_counts else 0
+        avg_complexity = np.mean(complexity_values) if complexity_values else 0
+        
+        # Avoid division by zero
+        if avg_commits == 0:
+            avg_commits = 1
+        if avg_complexity == 0:
+            avg_complexity = 1
+            
+        # Calculate relative scores
+        for file_path, metrics in file_metrics.items():
+            # Bug fix density (normalized by commits)
+            if metrics['n_commits'] > 0:
+                bug_ratio = metrics['bug_fix_count'] / metrics['n_commits']
+            else:
+                bug_ratio = 0
+                
+            # Calculate relative values (how much above/below average)
+            commit_factor = metrics['n_commits'] / avg_commits
+            
+            # Complexity factor
+            file_complexity = metrics['total_complexity'] / max(1, metrics['n_functions'])
+            complexity_factor = file_complexity / avg_complexity
+            
+            # Calculate weighted bug density
+            weighted_bug_density = bug_ratio * (1 + 0.5 * (complexity_factor - 1))
+            
+            # Calculate relative risk score
+            relative_risk = weighted_bug_density * (1 + 0.3 * (commit_factor - 1))
+            
+            # Add to metrics
+            metrics['bug_ratio'] = bug_ratio
+            metrics['relative_risk'] = relative_risk
+            
+            # Add risk category
+            if relative_risk < 0.5:
+                risk_category = "Low"
+            elif relative_risk < 1.0:
+                risk_category = "Medium-Low"
+            elif relative_risk < 1.5:
+                risk_category = "Medium"
+            elif relative_risk < 3.0:
+                risk_category = "Medium-High"
+            else:
+                risk_category = "High"
+                
+            metrics['risk_category'] = risk_category
+            
+        return file_metrics
+
+    def adapt_confidence_threshold(self):
+        """
+        Adapt confidence threshold based on repository characteristics.
+        
+        Returns:
+            float: Adapted confidence threshold
+        """
+        if not self.from_date or not self.to_date:
+            return self.confidence_threshold
+            
+        # Get time span in days
+        time_span = (self.to_date - self.from_date).days
+        
+        # Base adjustment on time span (longer range = higher threshold)
+        # For spans over 1 year, increase threshold to reduce false positives
+        base_adjustment = min(0.2, (time_span / 365) * 0.1)  # Max +0.2 for very long ranges
+        
+        adjusted_threshold = self.confidence_threshold + base_adjustment
+        
+        logger.info(f"Adjusted confidence threshold from {self.confidence_threshold} to {adjusted_threshold} based on time span of {time_span} days")
+        
+        return adjusted_threshold
+
     def extract_features(self, historical_data=True, max_commits=5000):
         """
         Extract features from the Git repository for model training or prediction.
@@ -73,6 +222,12 @@ class MLDefectPredictor:
         Returns:
             DataFrame: Features data for training or prediction
         """
+        # If we have cached features and we're not requesting historical data,
+        # return the cached features without labels
+        if self._feature_cache is not None and not historical_data:
+            logger.info("Using cached features for prediction")
+            return self._feature_cache
+            
         logger.info(f"Extracting features from repository: {self.url_to_repo}")
         
         # Initialize data structures
@@ -96,29 +251,35 @@ class MLDefectPredictor:
             total_commits = len(commits)
             logger.info(f"Found {total_commits} commits to analyze (limited to {max_commits})")
             
+            # Reference date for time weighting (use to_date or current date)
+            reference_date = self.to_date if self.to_date else datetime.now()
+            
             # Process all commits to extract metrics
             for i, commit in enumerate(commits):
                 if i % 100 == 0:
                     logger.info(f"Processing commit {i+1}/{total_commits}...")
                 
-                # Check if this is a bug fix commit (simple heuristic)
+                # Calculate time weight for this commit (higher for more recent commits)
+                time_weight = self.calculate_time_weight(commit.author_date, reference_date)
+                
+                # Check if this is a bug fix commit
                 is_bug_fix = any(keyword in commit.msg.lower() for keyword in 
                                 ['fix', 'bug', 'issue', 'error', 'crash', 'problem',
                                 'defect', 'fault', 'flaw', 'incorrect', 'regression'])
                 
                 # Process each modified file
                 for file in commit.modified_files:
-                    file_ext = os.path.splitext(file.filename)[1]
-                    if file_ext not in self.file_extensions:
-                        continue  # Skip non-code files
-                    
                     file_path = file.new_path or file.old_path
                     if file_path is None:
                         continue
-
-                     # Skip test files
-#                    if self.is_test_file(file_path):
-#                        continue
+                        
+                    # Skip if not a code file
+                    if not self.is_code_file(file_path):
+                        continue
+                    
+                    # Skip test files
+                    if self.is_test_file(file_path):
+                        continue
                     
                     # Initialize file data if it doesn't exist
                     if file_path not in file_metrics:
@@ -133,14 +294,19 @@ class MLDefectPredictor:
                             'last_modified': commit.author_date,
                             'first_modified': commit.author_date,
                             'bug_fix_count': 0,
-                            'is_buggy': False  # Will be updated if historical_data=True
+                            'weighted_commits': 0,
+                            'weighted_bugs': 0,
+                            'commit_dates': [],
+                            'is_buggy': False
                         }
                     
-                    # Update metrics
+                    # Update metrics with time weighting
                     file_metrics[file_path]['n_commits'] += 1
+                    file_metrics[file_path]['weighted_commits'] += time_weight
                     file_metrics[file_path]['n_authors'].add(commit.author.email)
                     file_metrics[file_path]['n_lines_added'] += file.added_lines
                     file_metrics[file_path]['n_lines_deleted'] += file.deleted_lines
+                    file_metrics[file_path]['commit_dates'].append(commit.author_date)
                     
                     # Update complexity metrics if available
                     if file.complexity is not None:
@@ -153,13 +319,17 @@ class MLDefectPredictor:
                     if commit.author_date > file_metrics[file_path]['last_modified']:
                         file_metrics[file_path]['last_modified'] = commit.author_date
                     
-                    # Mark files in bug fix commits
+                    # Mark files in bug fix commits with time weighting
                     if is_bug_fix:
                         file_metrics[file_path]['bug_fix_count'] += 1
+                        file_metrics[file_path]['weighted_bugs'] += time_weight
                         if historical_data:
                             bug_fixes.add(file_path)
             
             logger.info(f"Finished analyzing {total_commits} commits")
+            
+            # Calculate relative risk scores
+            file_metrics = self.calculate_relative_risk(file_metrics)
             
             # Create DataFrame from metrics
             data = []
@@ -178,10 +348,17 @@ class MLDefectPredictor:
                 if metrics['n_functions'] > 0:
                     avg_complexity = metrics['total_complexity'] / metrics['n_functions']
                 
+                # Calculate commit density (commits per month)
+                if age_days > 0:
+                    commit_density = (metrics['n_commits'] / age_days) * 30
+                else:
+                    commit_density = 0
+                
                 # Create a feature vector
                 features = {
                     'file_path': file_path,
                     'n_commits': metrics['n_commits'],
+                    'weighted_commits': metrics['weighted_commits'],
                     'n_authors': len(metrics['n_authors']),
                     'n_lines_added': metrics['n_lines_added'],
                     'n_lines_deleted': metrics['n_lines_deleted'],
@@ -189,6 +366,10 @@ class MLDefectPredictor:
                     'age_days': age_days,
                     'recent_modified_days': recent_modified_days,
                     'bug_fix_count': metrics['bug_fix_count'],
+                    'weighted_bugs': metrics['weighted_bugs'],
+                    'commit_density': commit_density,
+                    'relative_risk': metrics.get('relative_risk', 0),
+                    'risk_category': metrics.get('risk_category', 'Unknown')
                 }
                 
                 # Add label for training data
@@ -202,12 +383,17 @@ class MLDefectPredictor:
             if len(df) == 0:
                 logger.warning("No files extracted from repository")
                 # Create an empty DataFrame with the expected columns
-                cols = ['file_path', 'n_commits', 'n_authors', 'n_lines_added', 
-                       'n_lines_deleted', 'avg_complexity', 'age_days', 
-                       'recent_modified_days', 'bug_fix_count']
+                cols = ['file_path', 'n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
+                       'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
+                       'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
                 if historical_data:
                     cols.append('is_buggy')
                 return pd.DataFrame(columns=cols)
+            
+            # Cache the features without labels for future use
+            if historical_data:
+                self._feature_cache = df.drop('is_buggy', axis=1) if 'is_buggy' in df.columns else df
+                self._bug_fixes_cache = bug_fixes
                 
             logger.info(f"Extracted features for {len(df)} files")
             return df
@@ -215,9 +401,9 @@ class MLDefectPredictor:
         except Exception as e:
             logger.error(f"Error extracting features: {e}")
             # Create an empty DataFrame with the expected columns
-            cols = ['file_path', 'n_commits', 'n_authors', 'n_lines_added', 
-                   'n_lines_deleted', 'avg_complexity', 'age_days', 
-                   'recent_modified_days', 'bug_fix_count']
+            cols = ['file_path', 'n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
+                   'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
+                   'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
             if historical_data:
                 cols.append('is_buggy')
             return pd.DataFrame(columns=cols)
@@ -262,9 +448,13 @@ class MLDefectPredictor:
         # Extract file paths
         file_paths = df['file_path'].values
         
-        # Select features for the model
-        feature_cols = ['n_commits', 'n_authors', 'n_lines_added', 'n_lines_deleted',
-                       'avg_complexity', 'age_days', 'recent_modified_days', 'bug_fix_count']
+        # Select features for the model (including new features)
+        feature_cols = ['n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
+                        'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
+                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
+        
+        # Filter to include only columns that exist in the DataFrame
+        feature_cols = [col for col in feature_cols if col in df.columns]
         
         # Replace NaN values with 0
         X = df[feature_cols].fillna(0)
@@ -316,8 +506,9 @@ class MLDefectPredictor:
         )
         
         # Get feature importances
-        feature_cols = ['n_commits', 'n_authors', 'n_lines_added', 'n_lines_deleted',
-                       'avg_complexity', 'age_days', 'recent_modified_days', 'bug_fix_count']
+        feature_cols = ['n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
+                        'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
+                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
         importances = dict(zip(feature_cols, self.model.feature_importances_))
         
         metrics = {
@@ -362,22 +553,35 @@ class MLDefectPredictor:
         y_pred = self.model.predict(X_scaled)
         y_prob = self.model.predict_proba(X_scaled)[:, 1]  # Probability of being buggy
         
+        # Get adaptive threshold based on time range
+        adaptive_threshold = self.adapt_confidence_threshold()
+        
         # Create results
         results = []
         for i, file_path in enumerate(file_paths):
             confidence = float(y_prob[i])
-            # Only include predictions above the confidence threshold
-            if confidence >= self.confidence_threshold:
+            
+            # Include the relative risk and category from original features
+            relative_risk = float(df[df['file_path'] == file_path]['relative_risk'].values[0]) if 'relative_risk' in df.columns else 0
+            risk_category = str(df[df['file_path'] == file_path]['risk_category'].values[0]) if 'risk_category' in df.columns else 'Unknown'
+            
+            # Only include predictions above the adaptive confidence threshold
+            if confidence >= adaptive_threshold:
                 results.append({
                     "file_path": file_path,
                     "is_buggy": bool(y_pred[i]),
-                    "confidence": confidence
+                    "confidence": confidence,
+                    "relative_risk": relative_risk,
+                    "risk_category": risk_category,
+                    "_original_threshold": self.confidence_threshold,
+                    "_adjusted_threshold": adaptive_threshold,
+                    "_time_span": (self.to_date - self.from_date).days if self.to_date and self.from_date else 0
                 })
         
         # Sort by confidence (highest first)
         results = sorted(results, key=lambda x: x['confidence'], reverse=True)
         
-        logger.info(f"Generated predictions for {len(results)} files above confidence threshold")
+        logger.info(f"Generated predictions for {len(results)} files above confidence threshold {adaptive_threshold}")
         return results
     
     def save_model(self, path="ml_defect_model.joblib"):
