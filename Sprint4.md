@@ -32,6 +32,14 @@
    - Modified Docker configuration to properly persist output files to host system
    - Enhanced README with comprehensive explanation of risk scores and configuration options
 
+6. **Bug Fixes & Model Stability**:
+   - Fixed string-to-float conversion error by properly handling categorical features
+   - Ensured feature consistency between training and prediction phases
+   - Improved error handling for edge cases in repository analysis
+   - Added robust validation of input data before model training and prediction
+
+![Risk Category Distribution](risk_categories.png)
+*Example of the new risk categorization system, showing the distribution of files across risk levels*
 
 ## Technical Improvements
 
@@ -70,6 +78,23 @@
    - Implemented timestamped file naming for easier tracking of analysis runs
    - Added dual-output system that displays concisely on console while saving details to file
 
+5. **Handling Categorical Features**:
+   ```python
+   # Proper handling of features for the ML model
+   # Only include numerical features, not categorical ones
+   feature_cols = ['n_commits', 'weighted_commits', 'n_authors', 
+                  'n_lines_added', 'n_lines_deleted', 'avg_complexity', 
+                  'age_days', 'recent_modified_days', 'bug_fix_count', 
+                  'weighted_bugs', 'commit_density', 'relative_risk']
+   
+   # Don't include categorical features like 'risk_category'
+   # Filter to include only columns that exist in the DataFrame
+   feature_cols = [col for col in feature_cols if col in df.columns]
+   
+   # Prepare data for model
+   X = df[feature_cols].fillna(0)
+   ```
+
 ## Challenges Addressed
 
 1. **Over-prediction in Long Time Periods**:
@@ -95,6 +120,12 @@
    - Optimized repository traversal to handle larger codebases efficiently
    - Reduced memory footprint during analysis of large repositories
    - Improved overall analysis speed by up to 50%
+
+5. **Type Conversion Errors**:
+   - Fixed issues with string-to-float conversion when using categorical features
+   - Properly separated descriptive metrics from model training features
+   - Implemented robust input validation for all model operations
+   - Added comprehensive error handling for repository analysis edge cases
 
 ## Sample Execution Results
 

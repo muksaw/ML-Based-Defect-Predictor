@@ -1,0 +1,95 @@
+ML-Based Defect Predictor - Analysis started at 20250403_190904
+
+=== Configuration ===
+Repository: https://github.com/manideepika21/Deep-Live-Cam.git
+Branch: main
+Date range: 2023-09-24 to 2025-03-22
+Max commits: 5000
+File extensions: .py, .ipynb, .md, .js, .ts
+Base confidence threshold: 0.70
+Time decay factor: 30 days
+
+=== Starting Model Training ===
+Training using enhanced metrics including time-weighted analysis and relative risk scoring...
+
+=== Training Metrics ===
+Precision: 1.0000
+Recall: 1.0000
+F1 Score: 1.0000
+Buggy files in test set: 1 out of 6
+
+=== Feature Importances ===
+n_authors: 0.2133
+weighted_bugs: 0.2127
+bug_fix_count: 0.1500
+relative_risk: 0.1208
+n_commits: 0.1031
+weighted_commits: 0.0738
+n_lines_deleted: 0.0456
+recent_modified_days: 0.0381
+n_lines_added: 0.0177
+age_days: 0.0150
+avg_complexity: 0.0100
+commit_density: 0.0000
+
+=== Generating Predictions ===
+Using enhanced defect prediction with adaptive confidence threshold and time-weighted analysis...
+
+=== Top 10 Most Likely Buggy Files ===
+1. modules/processors/frame/face_enhancer.py - Confidence: 1.0000 - Risk: 0.40 (Low)
+2. modules/processors/frame/face_swapper.py - Confidence: 1.0000 - Risk: 0.79 (Medium-Low)
+3. modules/ui.py - Confidence: 1.0000 - Risk: 2.06 (Medium-High)
+4. modules/globals.py - Confidence: 0.9900 - Risk: 0.21 (Low)
+5. modules/core.py - Confidence: 0.9800 - Risk: 0.62 (Medium-Low)
+6. modules/face_analyser.py - Confidence: 0.9800 - Risk: 0.29 (Low)
+7. modules/predicter.py - Confidence: 0.9150 - Risk: 0.21 (Low)
+
+Total files analyzed: 7
+Files predicted as buggy: 7
+Files predicted as clean: 0
+
+=== Risk Category Breakdown ===
+Low Risk: 4 files (57.1%)
+Medium-Low Risk: 2 files (28.6%)
+Medium-High Risk: 1 files (14.3%)
+
+=== Understanding the Metrics ===
+
+* Confidence Score (0-1):
+  This is the machine learning model's prediction confidence that a file contains bugs.
+  - 0.5-0.7: Low confidence - the file might contain bugs
+  - 0.7-0.85: Medium confidence - the file likely contains bugs
+  - 0.85-1.0: High confidence - the file very likely contains bugs
+
+* Confidence Threshold Adjustment:
+  Base threshold: 0.70
+  Adjusted threshold: 0.85
+  This adjustment accounts for the 545 day analysis period.
+  - Longer time periods use higher thresholds to reduce false positives
+  - Only files with confidence above this threshold are shown
+
+* Relative Risk Score:
+  This normalized metric compares each file's risk against repository averages.
+  Relative Risk considers bug history, commit patterns, and code complexity.
+  - <0.5: Low Risk - significantly safer than repository average
+  - 0.5-1.0: Medium-Low Risk - somewhat safer than repository average
+  - 1.0-1.5: Medium Risk - around repository average
+  - 1.5-3.0: Medium-High Risk - higher risk than repository average
+  - >3.0: High Risk - significantly higher risk than repository average
+
+=== Comparison with Ground Truth ===
+Total Files in Ground Truth: 3
+Total Files Predicted as Buggy: 7
+
+=== Model Performance ===
+Precision: 0.43
+Recall: 1.00
+F1 Score: 0.60
+Top 5 Precision: 0.60
+Top 10 Precision: 0.43
+
+False Positives (Files predicted as buggy but not in ground truth):
+  - modules/predicter.py
+  - modules/face_analyser.py
+  - modules/processors/frame/face_enhancer.py
+  - modules/globals.py

@@ -448,11 +448,12 @@ class MLDefectPredictor:
         # Extract file paths
         file_paths = df['file_path'].values
         
-        # Select features for the model (including new features)
+        # Select features for the model (only numerical features)
         feature_cols = ['n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
                         'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
-                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
+                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk']
         
+        # Don't include categorical features like 'risk_category' as the model needs numeric values
         # Filter to include only columns that exist in the DataFrame
         feature_cols = [col for col in feature_cols if col in df.columns]
         
@@ -505,10 +506,15 @@ class MLDefectPredictor:
             y_test, y_pred, average='binary'
         )
         
-        # Get feature importances
+        # Get feature importances (only for numerical features that were used in training)
         feature_cols = ['n_commits', 'weighted_commits', 'n_authors', 'n_lines_added', 
                         'n_lines_deleted', 'avg_complexity', 'age_days', 'recent_modified_days', 
-                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk', 'risk_category']
+                        'bug_fix_count', 'weighted_bugs', 'commit_density', 'relative_risk']
+        
+        # Ensure we only include features that were actually used
+        feature_cols = [col for col in feature_cols if col in df.columns]
+        
+        # Map feature importances to feature names
         importances = dict(zip(feature_cols, self.model.feature_importances_))
         
         metrics = {

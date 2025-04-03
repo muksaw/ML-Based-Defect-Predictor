@@ -1,0 +1,74 @@
+ML-Based Defect Predictor - Analysis started at 20250403_190530
+
+=== Configuration ===
+Repository: https://github.com/manideepika21/Deep-Live-Cam.git
+Branch: main
+Date range: 2023-09-24 to 2025-03-22
+Max commits: 5000
+File extensions: .py, .ipynb, .md, .js, .ts
+Base confidence threshold: 0.70
+Time decay factor: 30 days
+
+=== Starting Model Training ===
+Training using enhanced metrics including time-weighted analysis and relative risk scoring...
+
+=== Training Metrics ===
+Precision: 1.0000
+Recall: 1.0000
+F1 Score: 1.0000
+Buggy files in test set: 1 out of 6
+
+=== Feature Importances ===
+n_authors: 0.2133
+weighted_bugs: 0.2127
+bug_fix_count: 0.1500
+relative_risk: 0.1208
+n_commits: 0.1031
+weighted_commits: 0.0738
+n_lines_deleted: 0.0456
+recent_modified_days: 0.0381
+n_lines_added: 0.0177
+age_days: 0.0150
+avg_complexity: 0.0100
+commit_density: 0.0000
+
+=== Generating Predictions ===
+Using enhanced defect prediction with adaptive confidence threshold and time-weighted analysis...
+
+=== Top 10 Most Likely Buggy Files ===
+1. modules/processors/frame/face_enhancer.py - Confidence: 1.0000 - Relative Risk: 0.3981
+2. modules/processors/frame/face_swapper.py - Confidence: 1.0000 - Relative Risk: 0.7890
+3. modules/ui.py - Confidence: 1.0000 - Relative Risk: 2.0571
+4. modules/globals.py - Confidence: 0.9900 - Relative Risk: 0.2085
+5. modules/core.py - Confidence: 0.9800 - Relative Risk: 0.6180
+6. modules/face_analyser.py - Confidence: 0.9800 - Relative Risk: 0.2896
+7. modules/predicter.py - Confidence: 0.9150 - Relative Risk: 0.2106
+
+Total files analyzed: 7
+Files predicted as buggy: 7
+Files predicted as clean: 0
+
+=== Enhanced Metrics Explanation ===
+Confidence: ML model's prediction confidence (0-1) - higher means more likely to contain bugs
+Relative Risk: Normalized risk score based on repository averages, considering:
+  - Bug fix history relative to repository average
+  - Time-weighted commit history (recent changes weighted higher)
+  - Code complexity relative to repository average
+  - Commit density (frequency of changes)
+
+=== Comparison with Ground Truth ===
+Total Files in Ground Truth: 3
+Total Files Predicted as Buggy: 7
+
+=== Model Performance ===
+Precision: 0.43
+Recall: 1.00
+F1 Score: 0.60
+Top 5 Precision: 0.60
+Top 10 Precision: 0.43
+
+False Positives (Files predicted as buggy but not in ground truth):
+  - modules/processors/frame/face_enhancer.py
+  - modules/globals.py
+  - modules/predicter.py
+  - modules/face_analyser.py
