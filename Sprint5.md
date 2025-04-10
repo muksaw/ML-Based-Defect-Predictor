@@ -11,16 +11,14 @@
 2. **ML Implementation Refinement**:
    - Evaluated AutoGluon for potential ML delegation
    - Determined current implementation superiority due to:
-     - Five sprints of focused refinement and testing
+     - Already far along in current implementation
      - Optimized performance for defect prediction
-     - Well-documented and maintainable codebase
      - Custom features specifically designed for defect analysis
 
 3. **Software Testing Concept Integration**:
    - Enhanced existing testing concepts implementation
    - Added new testing methodologies from course material
-   - Improved output organization and traceability
-   - Strengthened logic coverage for bug detection
+   - Introduced more logic coverage for bug detection
 
 ## Technical Improvements
 
@@ -107,13 +105,7 @@
 
 ## Plans for Future Enhancements
 
-1. **Graph Coverage Implementation**:
-   - Model file dependencies as graphs
-   - Identify critical paths in codebase
-   - Enhance risk assessment through dependency analysis
-   - Implement path-based defect prediction
-
-2. **Regression Testing Integration**:
+**Regression Testing Integration**:
    - Implement incremental analysis capabilities
    - Focus analysis on recently modified files
    - Optimize performance for large codebases
