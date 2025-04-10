@@ -248,13 +248,25 @@ def main():
     
     args = parser.parse_args()
     
-    # Create output filename with timestamp
+    # Create more descriptive output filename with timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     if args.output_file:
         output_base = os.path.splitext(args.output_file)[0]
     else:
-        output_base = 'output'
-    output_file = os.path.join(OUTPUTS_DIR, f"{output_base}_{timestamp}.txt")
+        output_base = 'defect_prediction'
+        
+    # Add run configuration to filename
+    config_info = []
+    if args.train:
+        config_info.append('train')
+    if args.predict:
+        config_info.append('predict')
+    if args.load_model:
+        config_info.append('loaded_model')
+        
+    # Create descriptive filename
+    run_type = '_'.join(config_info) if config_info else 'analysis'
+    output_file = os.path.join(OUTPUTS_DIR, f"{output_base}_{run_type}_{timestamp}.txt")
     
     # Load configuration
     config = load_config(args.config)
@@ -340,6 +352,17 @@ def main():
             
             # Print top predictions
             print_predictions(predictions)
+            
+            # Inform user about feature table export
+            print("\n=== Feature Table Export ===")
+            print("A CSV file containing all extracted features has been saved to the outputs directory.")
+            print("This table includes metrics such as:")
+            print("  - Number of commits")
+            print("  - Lines added/deleted")
+            print("  - Code complexity")
+            print("  - Bug fix history")
+            print("  - Time-based metrics")
+            print("You can use this data for further analysis or with other ML tools.")
             
             # Compare with ground truth if file exists
             if os.path.exists(args.ground_truth):

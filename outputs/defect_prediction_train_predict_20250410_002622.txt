@@ -1,4 +1,4 @@
-ML-Based Defect Predictor - Analysis started at 20250403_190904
+ML-Based Defect Predictor - Analysis started at 20250410_002622
 
 === Configuration ===
 Repository: https://github.com/manideepika21/Deep-Live-Cam.git
@@ -77,6 +77,16 @@ Medium-High Risk: 1 files (14.3%)
   - 1.5-3.0: Medium-High Risk - higher risk than repository average
   - >3.0: High Risk - significantly higher risk than repository average
 
+=== Feature Table Export ===
+A CSV file containing all extracted features has been saved to the outputs directory.
+This table includes metrics such as:
+  - Number of commits
+  - Lines added/deleted
+  - Code complexity
+  - Bug fix history
+  - Time-based metrics
+You can use this data for further analysis or with other ML tools.
+
 === Comparison with Ground Truth ===
 Total Files in Ground Truth: 3
 Total Files Predicted as Buggy: 7
@@ -89,7 +99,7 @@ Top 5 Precision: 0.60
 Top 10 Precision: 0.43
 
 False Positives (Files predicted as buggy but not in ground truth):
-  - modules/predicter.py
   - modules/face_analyser.py
   - modules/processors/frame/face_enhancer.py
+  - modules/predicter.py
   - modules/globals.py

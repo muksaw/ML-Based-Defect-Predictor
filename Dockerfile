@@ -7,29 +7,29 @@ FROM python:3.9-slim
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install git and basic utilities
-RUN apt-get update && apt-get install -y \
+# Install git and build essentials, and clean up in the same layer
+RUN apt-get update && \
+    apt-get install -y \
     git \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    gcc \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
+# Copy only requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY *.py ./
-COPY config.json ./
+# Install dependencies with pip no-cache and combine SpaCy download
+RUN pip install --no-cache-dir -r requirements.txt && \
+    python -m spacy download en_core_web_sm
 
-# Download the SpaCy language model
-RUN python -m spacy download en_core_web_sm
-
-# Create the Testing directory as a concrete path
+# Create the Testing directory
 RUN mkdir -p /app/Testing
 
-# Copy the entire project directory into the container
+# Copy application files
 COPY . .
 
-# Uncomment the command below to execute your script automatically
+# Default command
 CMD ["python", "ml_harness.py", "--train", "--predict"]
 
 # Note: Output files will be saved to the ./outputs directory in the repository

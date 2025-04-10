@@ -212,7 +212,7 @@ class MLDefectPredictor:
 
     def extract_features(self, historical_data=True, max_commits=5000):
         """
-        Extract features from the Git repository for model training or prediction.
+        Extract features from the Git repository for training or prediction.
         
         Args:
             historical_data (bool): If True, returns data for training including labels
@@ -263,9 +263,7 @@ class MLDefectPredictor:
                 time_weight = self.calculate_time_weight(commit.author_date, reference_date)
                 
                 # Check if this is a bug fix commit
-                is_bug_fix = any(keyword in commit.msg.lower() for keyword in 
-                                ['fix', 'bug', 'issue', 'error', 'crash', 'problem',
-                                'defect', 'fault', 'flaw', 'incorrect', 'regression'])
+                is_bug_fix = self.is_bug_fix(commit.msg)
                 
                 # Process each modified file
                 for file in commit.modified_files:
@@ -389,6 +387,17 @@ class MLDefectPredictor:
                 if historical_data:
                     cols.append('is_buggy')
                 return pd.DataFrame(columns=cols)
+            
+            # Export features to CSV with more descriptive name
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs')
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Add analysis type to filename
+            analysis_type = 'historical' if historical_data else 'prediction'
+            csv_path = os.path.join(output_dir, f'feature_table_{analysis_type}_{timestamp}.csv')
+            df.to_csv(csv_path, index=False)
+            logger.info(f"Feature table exported to {csv_path}")
             
             # Cache the features without labels for future use
             if historical_data:
@@ -625,4 +634,11 @@ class MLDefectPredictor:
             return True
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
-            return False 
+            return False
+
+    def is_bug_fix(self, commit_msg):
+        # Add more sophisticated logic analysis
+        return any(keyword in commit_msg.lower() for keyword in [
+            'fix', 'bug', 'issue', 'error', 'crash', 'problem',
+            'defect', 'fault', 'flaw', 'incorrect', 'regression'
+        ]) 
