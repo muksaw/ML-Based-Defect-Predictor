@@ -78,14 +78,8 @@
          commit_counts = [m['n_commits'] for m in file_metrics.values()]
          bug_fix_counts = [m['bug_fix_count'] for m in file_metrics.values()]
      ```
-   - Coverage of different aspects of code quality
 
-3. **Test Generation (Theme 3)**:
-   - Automatic generation of test requirements through commit analysis
-   - Feature extraction from repository history
-   - Dynamic threshold adaptation
-
-4. **Logic Coverage**:
+3. **Logic Coverage**:
    - Enhanced bug detection logic with comprehensive criteria
    - Improved pattern matching for defect identification
    - Systematic approach to categorizing code changes
@@ -102,7 +96,58 @@
    - Analysis: Found significant performance overhead
    - Decision: Maintained current implementation for better efficiency
    - Result: Preserved optimized performance while meeting course objectives
+   
+3. **Refinement of feature selection and clarity regarding our features**
+   - See next section.
 
+## Feature Selection output, and how it works
+The model uses 12 key features that are automatically extracted from git history. [Click here](https://docs.google.com/spreadsheets/d/1s1Br2VPYxl9xDe6LOxGbnZ0dsy_BaZuD49s9IsvwKVs/edit?usp=sharing)
+### Most Important Features (based on feature importance scores)
+- `n_authors` (21.33%)
+- `weighted_bugs` (21.27%)
+- `bug_fix_count` (15%)
+- `relative_risk` (12.08%)
+- `n_commits` (10.31%)
+
+### Time-Weighted Features
+- `weighted_commits`: Commits are weighted based on recency using exponential decay
+  - More recent commits have higher weights
+  - Uses a 30-day decay factor (configurable)
+  - Helps identify files with recent activity
+
+### Code Change Metrics
+- `n_lines_added`: Total lines added to a file
+- `n_lines_deleted`: Total lines deleted from a file
+- These help identify files with high churn, which often correlates with bugginess
+
+### Complexity Metrics
+- `avg_complexity`: Average cyclomatic complexity of functions in the file
+  - Higher complexity = more decision points = higher chance of bugs
+  - Measured using standard cyclomatic complexity metrics
+
+### Time-Based Features
+- `age_days`: How old the file is (days since first commit)
+- `recent_modified_days`: Days since last modification
+- Older files with recent changes often indicate maintenance issues
+
+### Bug-Related Features
+- `bug_fix_count`: Number of commits marked as bug fixes
+- `weighted_bugs`: Time-weighted bug fix count
+- Bug fixes are identified by commit messages containing keywords like "fix", "bug", "issue", etc.
+
+### Commit Patterns
+- `commit_density`: Commits per month (normalized by file age)
+- High density often indicates unstable or frequently changing code
+
+### Risk Assessment
+- `relative_risk`: Normalized risk score comparing file metrics to repository averages
+- `risk_category`: Categorized risk levels (Low, Medium-Low, Medium-High, High)
+- Based on multiple factors including bug history, complexity, and change patterns
+
+### Buggy Determination
+- `is_buggy`: Binary label (0/1) indicating if a file has had bug fixes
+- Determined by analyzing commit history for bug-fix related commits
+- Used as the target variable for training the model
 ## Plans for Future Enhancements
 
 **Regression Testing Integration**:
