@@ -148,13 +148,14 @@ The model uses 12 key features that are automatically extracted from git history
 - `is_buggy`: Binary label (0/1) indicating if a file has had bug fixes
 - Determined by analyzing commit history for bug-fix related commits
 - Used as the target variable for training the model
+
+
 ## Plans for Future Enhancements
 
 **Regression Testing Integration**:
-   - Implement incremental analysis capabilities
+   - Focus on integrating more course concepts into the code
    - Focus analysis on recently modified files
-   - Optimize performance for large codebases
-   - Add change-based prediction refinement
+   - Reasses the usage of autogluon in the project
 
 ## Conclusion
 
