@@ -4,19 +4,16 @@
 
 1. **Enhanced Model Explanation and Feature Analysis**:
    - Improved transparency around feature selection and importance
-   - Clarified mathematical formulations for risk calculation
-   - Documented feature extraction pipeline and data sources
-   - Enhanced understanding of prediction outputs and risk scoring
+   - Documented feature extraction 
+   - Analyze and explain our prediction outputs and risk scoring
 
 2. **Model Learning and Decision Process Documentation**:
-   - Detailed explanation of what signals the model is learning from
+   - Detailed explanation of what the model is learning from
    - Clarified label determination and ground truth methodology
-   - Documented threshold adjustment mechanics
    - Improved understanding of confidence scores and their interpretation
 
 3. **Risk Assessment Formulation**:
    - Documented detailed mathematical calculations for complexity metrics
-   - Clarified relative risk normalization methodology
    - Explained threshold adaptation based on repository characteristics
    - Provided risk categorization meaning and decision boundaries
 
@@ -35,7 +32,7 @@ risk_category,is_buggy
 - Primary signal comes from repository history and code structure patterns
 - Model learns which combination of features correlates with bug occurrence
 - Decision trees split on features in order of their predictive power
-- Most influential features:
+- Most influential features from our test runs:
   - Number of authors (21.33%)
   - Time-weighted bug fixes (21.27%)
   - Raw bug fix count (15.00%)
@@ -64,8 +61,6 @@ Features are derived from multiple sources:
 
 ### Mathematical Formulation of Risk
 
-The risk calculations follow a two-step process:
-
 1. **Weighted Bug Density Calculation**:
    ```
    weighted_bug_density = bug_ratio * (1 + 0.5 * (complexity_factor - 1))
@@ -85,7 +80,7 @@ The risk calculations follow a two-step process:
    - `commit_factor = file_commits / avg_repo_commits`
    - `0.3` is the weight coefficient for commit frequency influence
 
-These formulas create a normalized risk score where:
+These formulas create a normalized risk score where generally speaking:
 - 1.0 represents average repository risk
 - Values >1.0 indicate higher than average risk
 - Values <1.0 indicate lower than average risk
@@ -97,7 +92,7 @@ The model produces several key outputs:
 1. **Confidence Score** (0-1):
    - Probability that a file contains bugs
    - Higher values indicate higher likelihood
-   - Used with adaptive threshold to determine final prediction
+      - Used to determine final prediction
 
 2. **Adaptive Threshold**:
    ```
@@ -106,7 +101,6 @@ The model produces several key outputs:
    
    - Base threshold: 0.70
    - Adjusts automatically for longer analysis periods
-   - Reduces false positives in repositories with extensive history
 
 3. **Risk Categorization**:
    - Low: < 0.5 (significantly safer than average)
@@ -124,35 +118,16 @@ The model produces several key outputs:
 
 2. **Decision Table Testing**:
    - Evaluated model performance across different thresholds
-   - Systematically analyzed feature importance
    - Implemented multiple decision paths in risk categorization
 
-3. **Black-Box Testing Techniques**:
-   - Treated model as black box for external evaluation
-   - Validated predictions against external ground truth
-   - Implemented boundary value analysis for thresholds
 
 ## Future Enhancements
 
 1. **Model Performance Metrics Enhancement**:
    - Add more sophisticated evaluation metrics
-   - Implement cross-validation for model stability assessment
    - Create visualization of feature importance and relationship
 
 2. **Continuous Feedback Loop**:
    - Develop mechanism to incorporate developer feedback
    - Implement verification of predictions against actual bugs
    - Create incremental learning pipeline for model improvement
-
-3. **Deployment Integration**:
-   - Design CI/CD integration for automated defect prediction
-   - Create developer-friendly interfaces for prediction results
-   - Implement notification system for high-risk changes
-
-## Conclusion
-
-Sprint 6 has significantly enhanced the transparency and understanding of our ML-based defect predictor. By documenting the mathematical foundations, feature extraction process, and decision mechanisms, we've made the system more interpretable and trustworthy.
-
-The clarification of how features are extracted, how the model learns from them, and how predictions are generated provides developers with a clear understanding of why certain files are flagged as potentially buggy. This improved transparency not only aligns with software testing principles but also increases the likelihood of adoption by development teams.
-
-Our risk calculation methodology, with its normalization against repository averages and weighted adjustments for complexity and commit patterns, provides an intuitive and contextually relevant assessment that developers can trust. Combined with adaptive thresholding and clear categorization, the system now delivers actionable insights that can be effectively integrated into development workflows. 
