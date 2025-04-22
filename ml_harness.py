@@ -80,7 +80,7 @@ def truncate_list(items, max_display=10):
     return truncated
 
 
-def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, config_start_date, config_end_date):
+def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, config_start_date, config_end_date, top_x):
     """
     Compares the output of defect predictor model with the ground truth CSV file filtered by URL and dates.
     
@@ -123,65 +123,99 @@ def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, co
         # Get predicted files (those with is_buggy=True) — use only filenames
         predicted_files_set = {os.path.basename(f['file_path']) for f in predicted_files if f['is_buggy']}
 
-        # Get top N files by confidence (also use only filenames)
-        top_5_files = {os.path.basename(f['file_path']) for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
-        top_10_files = {os.path.basename(f['file_path']) for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
+        # # Get top N files by confidence (also use only filenames)
+        # top_5_files = {os.path.basename(f['file_path']) for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
+        # top_10_files = {os.path.basename(f['file_path']) for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
 
+        # Calculate risk scores
+        print("\nRisk Scores (File Name -> Risk Value):")
+        for file in enumerate(predicted_files_set): 
+            print(f"{file['file_path']} -> {file.get('relative_risk', 0):.2f}")
+
+        print(f"\nTop {top_x} Risky Files:")
+        top_x_by_risk = sorted(predicted_files, key=lambda x: x.get('relative_risk', 0), reverse=True)[:top_x]
+        print("Top three risky files:\n")
+        for i, file in enumerate(top_x_by_risk):
+            #risk_info = f" - Risk: {file.get('relative_risk', 0):.2f} ({file.get('risk_category', 'Unknown')})" if 'relative_risk' in file else ""
+            risk_info = f" -> {file.get('relative_risk')}"
+            print(f"{i+1}. {file['file_path']}{risk_info}")
+
+        # OLD CALC
         # Calculate true positives, false positives, and false negatives
-        true_positives = predicted_files_set.intersection(ground_truth_files)
-        false_positives = predicted_files_set - ground_truth_files
-        false_negatives = ground_truth_files - predicted_files_set
+        ### true_positives = predicted_files_set.intersection(ground_truth_files)
+        ### false_positives = predicted_files_set - ground_truth_files
+        ### false_negatives = ground_truth_files - predicted_files_set
+
+        print("\nComparing Top 3 Risky Files with Ground Truth...")
+        true_positives = top_x_by_risk.intersection(ground_truth_files)
+        false_positives = top_x_by_risk - ground_truth_files
+        false_negatives = ground_truth_files - top_x_by_risk
+
+        # Print mismatched details
+        print("\nFalse Positives (Files predicted but not in ground truth):")
+        for fp in false_positives:
+            print(fp)
+    
+        print("\nFalse Negatives (Files in ground truth but not predicted):")
+        for fn in false_negatives:
+            print(fn)
+    
+        # Compute evaluation metrics
+        accuracy = len(true_positives) / (len(true_positives) + len(false_positives) + len(false_negatives)) if (len(true_positives) + len(false_positives) + len(false_negatives)) > 0 else 0
+        print(f"\nAccuracy: {accuracy:.2f}")
+    
+        return ground_truth_files
         
-        # Top N metrics
-        top_5_true_positives = top_5_files.intersection(ground_truth_files)
-        top_10_true_positives = top_10_files.intersection(ground_truth_files)
+    #     # Top N metrics
+    #     top_5_true_positives = top_5_files.intersection(ground_truth_files)
+    #     top_10_true_positives = top_10_files.intersection(ground_truth_files)
         
-        # Calculate precision, recall, F1
-        precision = len(true_positives) / len(predicted_files_set) if predicted_files_set else 0
-        recall = len(true_positives) / len(ground_truth_files) if ground_truth_files else 0
-        f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    #     # Calculate precision, recall, F1
+    #     precision = len(true_positives) / len(predicted_files_set) if predicted_files_set else 0
+    #     recall = len(true_positives) / len(ground_truth_files) if ground_truth_files else 0
+    #     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
         
-        # Top N precision
-        top_5_precision = len(top_5_true_positives) / len(top_5_files) if top_5_files else 0
-        top_10_precision = len(top_10_true_positives) / len(top_10_files) if top_10_files else 0
+    #     # Top N precision
+    #     top_5_precision = len(top_5_true_positives) / len(top_5_files) if top_5_files else 0
+    #     top_10_precision = len(top_10_true_positives) / len(top_10_files) if top_10_files else 0
         
-        # Print comparison results
-        print(f"\n=== Comparison with Ground Truth ===")
-        print(f"Total Files in Ground Truth: {len(ground_truth_files)}")
-        print(f"Total Files Predicted as Buggy: {len(predicted_files_set)}")
+    #     # Print comparison results
+    #     print(f"\n=== Comparison with Ground Truth ===")
+    #     print(f"Total Files in Ground Truth: {len(ground_truth_files)}")
+    #     print(f"Total Files Predicted as Buggy: {len(predicted_files_set)}")
         
-        # Print metrics
-        print(f"\n=== Model Performance ===")
-        print(f"Precision: {precision:.2f}")
-        print(f"Recall: {recall:.2f}")
-        print(f"F1 Score: {f1_score:.2f}")
-        print(f"Top 5 Precision: {top_5_precision:.2f}")
-        print(f"Top 10 Precision: {top_10_precision:.2f}")
+    #     # Print metrics
+    #     print(f"\n=== Model Performance ===")
+    #     print(f"Precision: {precision:.2f}")
+    #     print(f"Recall: {recall:.2f}")
+    #     print(f"F1 Score: {f1_score:.2f}")
+    #     print(f"Top 5 Precision: {top_5_precision:.2f}")
+    #     print(f"Top 10 Precision: {top_10_precision:.2f}")
         
-        # Print mismatched files
-        if len(false_positives) > 0:
-            print(f"\nFalse Positives (Files predicted as buggy but not in ground truth):")
-            print(list(false_positives)[:20])  # Truncating the list for print
+    #     # Print mismatched files
+    #     if len(false_positives) > 0:
+    #         print(f"\nFalse Positives (Files predicted as buggy but not in ground truth):")
+    #         print(list(false_positives)[:20])  # Truncating the list for print
         
-        if len(false_negatives) > 0:
-            print(f"\nFalse Negatives (Files in ground truth but not predicted):")
-            print(list(false_negatives)[:20])  # Truncating the list for print
+    #     if len(false_negatives) > 0:
+    #         print(f"\nFalse Negatives (Files in ground truth but not predicted):")
+    #         print(list(false_negatives)[:20])  # Truncating the list for print
         
-        return {
-            "precision": precision,
-            "recall": recall,
-            "f1_score": f1_score,
-            "top_5_precision": top_5_precision,
-            "top_10_precision": top_10_precision,
-            "true_positives": len(true_positives),
-            "false_positives": len(false_positives),
-            "false_negatives": len(false_negatives),
-            "ground_truth_count": len(ground_truth_files),
-            "predicted_buggy_count": len(predicted_files_set)
-        }
-    except Exception as e:
-        logger.error(f"Error comparing with ground truth: {e}")
-        return {}
+    #     return {
+    #         "precision": precision,
+    #         "recall": recall,
+    #         "f1_score": f1_score,
+    #         "top_5_precision": top_5_precision,
+    #         "top_10_precision": top_10_precision,
+    #         "true_positives": len(true_positives),
+    #         "false_positives": len(false_positives),
+    #         "false_negatives": len(false_negatives),
+    #         "ground_truth_count": len(ground_truth_files),
+    #         "predicted_buggy_count": len(predicted_files_set)
+    #     }
+    # except Exception as e:
+    #     logger.error(f"Error comparing with ground truth: {e}")
+    #     return {}
 
 def print_predictions(predictions):
     """
@@ -395,7 +429,8 @@ def main():
                 url = config['url_to_repo']
                 fromDate = config['from_date']
                 toDate = config['to_date']
-                compare_with_ground_truth(predictions, args.ground_truth, url, fromDate, toDate)
+                top_x = config['top_x']
+                compare_with_ground_truth(predictions, args.ground_truth, url, fromDate, toDate, top_x)
             else:
                 logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
                 print(f"\nNote: Ground truth file {args.ground_truth} not found. Skipping comparison.")
