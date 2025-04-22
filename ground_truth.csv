@@ -1,4 +1,22 @@
-from_date,to_date,modified_files
-2023-09-24,2025-03-22,modules/processors/frame/face_swapper.py
-2023-09-24,2025-03-22,modules/ui.py
-2023-09-24,2025-03-22,modules/core.py
+﻿risky_files,from_date,to_date,github_url,branch
+"face_swapper.py, ui.py, core.py",2023-09-24,2025-03-22,https://github.com/manideepika21/Deep-Live-Cam.git,main
+"routing.py, applications.py, param_functions.py",2018-12-05,2025-03-23,https://github.com/manideepika21/fastapi.git,master
+"trainer.py, local_no_block.py, spectral_convolution.py",2023-02-13,2025-03-23,https://github.com/manideepika21/neuraloperator.git,main
+"_pipeline.py, info.py, optimize.py",2013-04-19,2025-03-23,https://github.com/manideepika21/OCRmyPDF.git,main
+"transcribe.py, timing.py, utils.py",2022-09-21,2025-03-23,https://github.com/manideepika21/whisper.git,main
+"ui.py, face_swapper.py, metadata.py",2023-09-24,2023-11-04,https://github.com/manideepika21/Deep-Live-Cam.git,main
+"ui.py,core.py, globals.py",2023-12-24,2024-08-24,https://github.com/manideepika21/Deep-Live-Cam.git,main
+"ui.py, core.py, globals.py",2024-04-11,2024-09-05,https://github.com/manideepika21/Deep-Live-Cam.git,main
+"ui.py, core.py, globals.py ",2023-09-24,2024-09-10,https://github.com/manideepika21/Deep-Live-Cam.git,main
+"routing.py, utils.py, oauth2.py",2018-12-05,2018-12-13,https://github.com/manideepika21/fastapi.git,master
+"routing.py, utils.py, oauth2.py",2018-12-05,2018-12-23,https://github.com/manideepika21/fastapi.git,master
+"routing.py, utils.py, oauth2.py",2018-12-24,2019-01-07,https://github.com/manideepika21/fastapi.git,master
+"routing.py, utils.py, oauth2.py",2018-12-05,2019-01-07,https://github.com/manideepika21/fastapi.git,master
+"fno_block.py,tfno.py,spectral_convolution.py",2023-02-13,2023-04-03,https://github.com/manideepika21/neuraloperator.git,main
+"fno_block.py,tfno.py,uno.py",2023-04-04,2023-06-01,https://github.com/manideepika21/neuraloperator.git,main
+"fno_block.py,fno.py,uno.py",2023-06-02,2023-08-16,https://github.com/manideepika21/neuraloperator.git,main
+"fno_block.py,fno.py,uno.py",2023-02-13,2023-08-16,https://github.com/manideepika21/neuraloperator.git,main
+"transcribe.py, decoding.py, utils.py",2022-09-21,2022-11-28,https://github.com/manideepika21/whisper.git,main
+"transcribe.py, decoding.py, utils.py",2022-04-12,2023-03-06,https://github.com/manideepika21/whisper.git,main
+"transcribe.py, decoding.py, utils.py",2023-03-07,2024-09-01,https://github.com/manideepika21/whisper.git,main
+"transcribe.py, decoding.py, utils.py",2022-09-21,2024-12-01,https://github.com/manideepika21/whisper.git,main

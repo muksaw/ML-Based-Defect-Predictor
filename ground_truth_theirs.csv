@@ -1,6 +1,0 @@
-﻿risky_files,from_date,to_date,github_url,branch
-"face_swapper.py, ui.py, core.py",2023-09-24,2025-03-22,https://github.com/manideepika21/Deep-Live-Cam.git,main
-"routing.py, applications.py, param_functions.py",2018-12-05,2025-03-23,https://github.com/manideepika21/fastapi.git,master
-"trainer.py, local_no_block.py, spectral_convolution.py",2023-02-13,2025-03-23,https://github.com/manideepika21/neuraloperator.git,main
-"_pipeline.py, info.py, optimize.py",2013-04-19,2025-03-23,https://github.com/manideepika21/OCRmyPDF.git,main
-"transcribe.py, timing.py, utils.py",2022-09-21,2025-03-23,https://github.com/manideepika21/whisper.git,main

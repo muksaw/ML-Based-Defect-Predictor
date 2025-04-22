@@ -79,30 +79,65 @@ def truncate_list(items, max_display=10):
     
     return truncated
 
-def compare_with_ground_truth(predicted_files, ground_truth_file):
+
+def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, config_start_date, config_end_date):
     """
-    Compare predicted buggy files with ground truth data.
+    Compares the output of defect predictor model with the ground truth CSV file filtered by URL and dates.
     
     Args:
-        predicted_files (list): List of dictionaries with predicted buggy files
-        ground_truth_file (str): Path to the ground truth CSV file
+        predicted_files (list): List of dictionaries with predicted buggy files (each dictionary contains 'file_path' and 'is_buggy').
+        ground_truth_file (str): Path to the ground truth CSV file.
+        config_url (str): The URL to filter the ground truth by.
+        config_start_date (str): The start date (YYYY-MM-DD) to filter the ground truth by.
+        config_end_date (str): The end date (YYYY-MM-DD) to filter the ground truth by.
     
     Returns:
-        dict: Comparison metrics
+        dict: Comparison metrics including precision, recall, F1 score, top 5/10 precision, and counts of true/false positives/negatives.
     """
     try:
         # Load ground truth
         df = pd.read_csv(ground_truth_file)
-        ground_truth_files = set(df['modified_files'].dropna().tolist())
         
+        # Convert date columns in ground truth to datetime (YYYY-MM-DD format)
+        df['from_date'] = pd.to_datetime(df['from_date'], format='%Y-%m-%d')
+        df['to_date'] = pd.to_datetime(df['to_date'], format='%Y-%m-%d')
+        
+        # Convert config.json dates to datetime (YYYY-MM-DD)
+        config_from = pd.to_datetime(config_start_date, format='%Y-%m-%d')
+        config_to = pd.to_datetime(config_end_date, format='%Y-%m-%d')
+        
+        # Filter ground truth entries by URL and date range
+        mask = (
+            (df['github_url'] == config_url) &
+            (config_from >= df['from_date']) &
+            (config_to <= df['to_date'])
+        )
+        df_filtered = df[mask]
+        
+        # Collect all modified files from filtered entries
+        ground_truth_files = set()
+        for file_list in df_filtered['risky_files']:
+            files = [os.path.basename(f.strip()) for f in file_list.split(',')]
+            ground_truth_files.update(files)
+        
+        # OLD
+
         # Get predicted files (those with is_buggy=True)
-        predicted_files_set = {f['file_path'] for f in predicted_files if f['is_buggy']}
+        #predicted_files_set = {f['file_path'] for f in predicted_files if f['is_buggy']}
         
         # Get top N files by confidence
-        top_5_files = {f['file_path'] for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
-        top_10_files = {f['file_path'] for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
-        
-        # Calculate metrics
+        #top_5_files = {f['file_path'] for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
+        #top_10_files = {f['file_path'] for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
+
+        # NEW
+        # Get predicted files (those with is_buggy=True) — use only filenames
+        predicted_files_set = {os.path.basename(f['file_path']) for f in predicted_files if f['is_buggy']}
+
+        # Get top N files by confidence (also use only filenames)
+        top_5_files = {os.path.basename(f['file_path']) for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
+        top_10_files = {os.path.basename(f['file_path']) for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
+
+        # Calculate true positives, false positives, and false negatives
         true_positives = predicted_files_set.intersection(ground_truth_files)
         false_positives = predicted_files_set - ground_truth_files
         false_negatives = ground_truth_files - predicted_files_set
@@ -133,14 +168,14 @@ def compare_with_ground_truth(predicted_files, ground_truth_file):
         print(f"Top 5 Precision: {top_5_precision:.2f}")
         print(f"Top 10 Precision: {top_10_precision:.2f}")
         
-        # Print mismatched files with truncation
+        # Print mismatched files
         if len(false_positives) > 0:
             print(f"\nFalse Positives (Files predicted as buggy but not in ground truth):")
-            print(truncate_list(list(false_positives), 20))
+            print(list(false_positives)[:20])  # Truncating the list for print
         
         if len(false_negatives) > 0:
             print(f"\nFalse Negatives (Files in ground truth but not predicted):")
-            print(truncate_list(list(false_negatives), 20))
+            print(list(false_negatives)[:20])  # Truncating the list for print
         
         return {
             "precision": precision,
@@ -271,6 +306,7 @@ def main():
     # Load configuration
     config = load_config(args.config)
     logger.info(f"Loaded configuration from {args.config}")
+
     
     # Override max_commits if provided via command line
     if args.max_commits:
@@ -366,7 +402,10 @@ def main():
             
             # Compare with ground truth if file exists
             if os.path.exists(args.ground_truth):
-                compare_with_ground_truth(predictions, args.ground_truth)
+                url = config['url_to_repo']
+                fromDate = config['from_date']
+                toDate = config['to_date']
+                compare_with_ground_truth(predictions, args.ground_truth, url, fromDate, toDate)
             else:
                 logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
                 print(f"\nNote: Ground truth file {args.ground_truth} not found. Skipping comparison.")
