@@ -1,0 +1,29 @@
+Risky Python files: {'ui.py', 'predicter.py', 'globals.py', 'face_swapper.py', 'face_enhancer.py', 'core.py', 'face_analyser.py'}
+
+Calculating risk scores...
+
+Risk Scores (File Name -> Risk Value):
+ui.py -> 2.06
+face_swapper.py -> 0.79
+core.py -> 0.62
+face_enhancer.py -> 0.40
+face_analyser.py -> 0.29
+predicter.py -> 0.21
+globals.py -> 0.21
+
+Top 3 Risky Files:
+  - face_enhancer.py -> 0.40
+  - face_swapper.py -> 0.79
+  - ui.py -> 2.06
+
+Comparing with Ground Truth...
+
+False Positives (Files predicted but not in ground truth):
+face_enhancer.py
+predicter.py
+face_analyser.py
+globals.py
+
+False Negatives (Files in ground truth but not predicted):
+
+Accuracy: 0.43
