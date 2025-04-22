@@ -3,7 +3,7 @@
     "clone_repo_to": "/tmp/repo_clone",
     "branch": "main",
     "from_date": "2023-09-24",
-    "to_date": "2025-03-22",
+    "to_date": "2023-11-04",
     "confidence_threshold": 0.70,
     "model_path": "ml_defect_model.joblib",
     "file_extensions": [".py", ".ipynb", ".md", ".js", ".ts"],

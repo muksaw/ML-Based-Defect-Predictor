@@ -176,8 +176,8 @@ def print_predictions(predictions):
     
     # Print top 3 risky files
     print("\nTop 3 Risky Files:")
-    for pred in predictions[:3]:
-        print(f"  - {os.path.basename(pred['file_path'])} -> {pred['relative_risk']:.2f}")
+    for filename, risk in risk_scores[:3]:
+        print(f"  - {filename} -> {risk:.2f}")
 
 def main():
     """Main function to run the ML defect predictor."""
@@ -263,23 +263,26 @@ def main():
             
             if not predictions:
                 logger.error("No predictions generated")
+
+                print("\nNo risk scores calculated.")
                 return
             
-            # Print predictions in original harness format
-            print_predictions(predictions)
+            if predictions:
+                # Print predictions in original harness format
+                print_predictions(predictions)
             
-            # Compare with ground truth if file exists
-            if os.path.exists(args.ground_truth):
-                print("\nComparing with Ground Truth...")
-                compare_with_ground_truth(
-                    predictions,
-                    args.ground_truth,
-                    config['url_to_repo'],
-                    config['from_date'],
-                    config['to_date']
-                )
-            else:
-                logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
+                # Compare with ground truth if file exists
+                if os.path.exists(args.ground_truth):
+                    print("\nComparing with Ground Truth...")
+                    compare_with_ground_truth(
+                        predictions,
+                        args.ground_truth,
+                        config['url_to_repo'],
+                        config['from_date'],
+                        config['to_date']
+                    )
+                else:
+                    logger.warning(f"Ground truth file {args.ground_truth} not found. Skipping comparison.")
 
 if __name__ == "__main__":
     main() 

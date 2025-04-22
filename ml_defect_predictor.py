@@ -566,6 +566,9 @@ class MLDefectPredictor:
         
         # Get predictions and probabilities
         y_pred = self.model.predict(X_scaled)
+        if len(self.model.classes_) < 2:
+            logger.error("Model was trained with only one class. Cannot compute probability for both classes.")
+            return []
         y_prob = self.model.predict_proba(X_scaled)[:, 1]  # Probability of being buggy
         
         # Get adaptive threshold based on time range
