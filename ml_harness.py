@@ -80,7 +80,7 @@ def truncate_list(items, max_display=10):
     return truncated
 
 
-def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, config_start_date, config_end_date, top_x):
+def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, config_start_date, config_end_date):
     """
     Compares the output of defect predictor model with the ground truth CSV file filtered by URL and dates.
     
