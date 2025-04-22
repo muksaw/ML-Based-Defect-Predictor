@@ -210,7 +210,7 @@ class MLDefectPredictor:
         
         return adjusted_threshold
 
-    def extract_features(self, historical_data=True, max_commits=5000):
+    def extract_features(self, historical_data=True, max_commits=6000):
         """
         Extract features from the Git repository for training or prediction.
         

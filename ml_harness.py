@@ -120,16 +120,6 @@ def compare_with_ground_truth(predicted_files, ground_truth_file, config_url, co
             files = [os.path.basename(f.strip()) for f in file_list.split(',')]
             ground_truth_files.update(files)
         
-        # OLD
-
-        # Get predicted files (those with is_buggy=True)
-        #predicted_files_set = {f['file_path'] for f in predicted_files if f['is_buggy']}
-        
-        # Get top N files by confidence
-        #top_5_files = {f['file_path'] for f in predicted_files[:5]} if len(predicted_files) >= 5 else predicted_files_set
-        #top_10_files = {f['file_path'] for f in predicted_files[:10]} if len(predicted_files) >= 10 else predicted_files_set
-
-        # NEW
         # Get predicted files (those with is_buggy=True) — use only filenames
         predicted_files_set = {os.path.basename(f['file_path']) for f in predicted_files if f['is_buggy']}
 
@@ -346,7 +336,7 @@ def main():
             logger.info("Training model...")
             print("\n=== Starting Model Training ===")
             print("Training using enhanced metrics including time-weighted analysis and relative risk scoring...")
-            max_commits = config.get('max_commits', 5000)
+            max_commits = config.get('max_commits', 6000)
             metrics = predictor.train()
             
             if "error" in metrics:
@@ -378,7 +368,7 @@ def main():
             logger.info("Generating predictions...")
             print("\n=== Generating Predictions ===")
             print("Using enhanced defect prediction with adaptive confidence threshold and time-weighted analysis...")
-            max_commits = config.get('max_commits', 5000)
+            max_commits = config.get('max_commits', 6000)
             predictions = predictor.predict()
             
             if not predictions:
