@@ -48,7 +48,7 @@ docker build -t defect-predictor .
 ### 4. Run the project
 Run the docker container from the image and mount the outputs directory to save results:
 ```bash
-docker run --rm -it -v $(pwd)/outputs:/app/outputs defect-predictor
+docker run --rm -it defect-predictor
 ```
 
 
