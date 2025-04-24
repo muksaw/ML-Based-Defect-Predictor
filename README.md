@@ -2,41 +2,58 @@
 
 This project provides an implementation of a Defect Predictor by leveraging RepoMiner and PyDriller to analyze commit history and predict the risk associated with files in a given revision. It extends the RepoMiner example and includes risk calculation based on commit history.
 
-## Key Features
-
-- **Machine Learning-Based Defect Prediction**: Uses Random Forest classifier to identify potentially buggy files
-- **Time-Weighted Analysis**: Gives more weight to recent commits and bug fixes
-- **Relative Risk Scoring**: Compares each file against repository averages
-- **Adaptive Confidence Threshold**: Automatically adjusts prediction sensitivity based on time span
-- **Risk Categorization**: Categorizes files into risk levels (Low to High)
-- **Test File Exclusion**: Excludes test files from analysis
-
 # Setup Instructions
 
 
 ## Installation
-Follow the steps below to set up and run the project after cloning its repo
+Follow the steps below to set up and run the project
 
-### 2. Build the docker file
+### 1. Clone the repo
+First, you need to clone our repo in order to use the project, preferably to your desired repository.
+
+```bash
+git clone https://github.com/muksaw/ML-Based-Defect-Predictor.git
+```
+
+### 2. Configuration Options
+Navigate to our config.json.
+The `config.json` file allows you to customize:
+
+```json
+{
+    "url_to_repo": "Repository URL to analyze",
+    "clone_repo_to": "Local path to clone the repository",
+    "branch": "Branch to analyze",
+    "from_date": "Start date for analysis (YYYY-MM-DD)",
+    "to_date": "End date for analysis (YYYY-MM-DD)",
+    "confidence_threshold": "Base confidence threshold (0.0-1.0)",
+    "model_path": "Path to save/load the trained model",
+    "file_extensions": ["Extensions to include in analysis"],
+    "max_commits": "Maximum number of commits to analyze",
+    "time_decay_factor": "Half-life for time weighting in days"
+}
+```
+Based on these parameters, please input what you would like, and then ensure you have certain files you know are buggy in the ground truth, matching the CSV format (columns included below).
+```csv
+risky_files,from_date,to_date,github_url,branch
+```
+
+
+### 3. Build the docker file
 Create a docker image (see Dockerfile) for the project: 
 ```bash
 docker build -t defect-predictor .
 ```
 
-### 3. Run the project
+### 4. Run the project
 Run the docker container from the image and mount the outputs directory to save results:
 ```bash
 docker run --rm -it -v $(pwd)/outputs:/app/outputs defect-predictor
 ```
 
-  
-### 4. Login and run 
-Create a docker container and run a bash shell in it. From there, you can modify the file config.json as you wish.
-```bash
- docker run -it --rm defect-predictor bash
-```
 
-## Understanding Risk Scores
+
+## Understanding Results and Risk Scores
 
 The model uses two primary metrics to evaluate file risk:
 
@@ -54,24 +71,16 @@ A normalized metric that compares each file's risk against repository averages:
 - 1.5-3.0: Medium-High Risk - higher risk than average
 - >3.0: High Risk - significantly higher risk than average
 
-## Configuration Options
 
-The `config.json` file allows you to customize:
+## Key Features
 
-```json
-{
-    "url_to_repo": "Repository URL to analyze",
-    "clone_repo_to": "Local path to clone the repository",
-    "branch": "Branch to analyze",
-    "from_date": "Start date for analysis (YYYY-MM-DD)",
-    "to_date": "End date for analysis (YYYY-MM-DD)",
-    "confidence_threshold": "Base confidence threshold (0.0-1.0)",
-    "model_path": "Path to save/load the trained model",
-    "file_extensions": ["Extensions to include in analysis"],
-    "max_commits": "Maximum number of commits to analyze",
-    "time_decay_factor": "Half-life for time weighting in days"
-}
-```
+- **Machine Learning-Based Defect Prediction**: Uses Random Forest classifier to identify potentially buggy files
+- **Time-Weighted Analysis**: Gives more weight to recent commits and bug fixes
+- **Relative Risk Scoring**: Compares each file against repository averages
+- **Adaptive Confidence Threshold**: Automatically adjusts prediction sensitivity based on time span
+- **Risk Categorization**: Categorizes files into risk levels (Low to High)
+- **Test File Exclusion**: Excludes test files from analysis
+
 
 ## Overview of files
 
