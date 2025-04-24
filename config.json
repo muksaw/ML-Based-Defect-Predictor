@@ -1,9 +1,9 @@
 {
-    "url_to_repo": "https://github.com/manideepika21/Deep-Live-Cam.git",
+    "url_to_repo": "https://github.com/manideepika21/neuraloperator.git",
     "clone_repo_to": "/tmp/repo_clone",
     "branch": "main",
-    "from_date": "2023-09-24",
-    "to_date": "2023-11-04",
+    "from_date": "2023-02-13",
+    "to_date": "2025-03-23",
     "confidence_threshold": 0.70,
     "model_path": "ml_defect_model.joblib",
     "file_extensions": [".py", ".ipynb", ".md", ".js", ".ts"],
